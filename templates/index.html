@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduAnalysis | Tableau de Bord des Performances</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>EduAnalysis.</h1>
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="triggerAnalysis()">Lancer l'Analyse</button>
+                <label for="csv-upload" class="btn btn-primary" style="display: inline-block; cursor: pointer;">
+                    Importer CSV
+                </label>
+                <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="handleCsvUpload(event)">
+            </div>
+        </header>
+
+        <main>
+            <div class="dashboard-grid">
+                <!-- Data Entry Card -->
+                <div class="card">
+                    <h2>Ajouter un Étudiant</h2>
+                    <form id="student-form" onsubmit="handleFormSubmit(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="form-group">
+                                <label>Âge</label>
+                                <input type="number" name="age" required min="10" max="30">
+                            </div>
+                            <div class="form-group">
+                                <label>Genre</label>
+                                <select name="gender" required>
+                                    <option value="M">Masculin</option>
+                                    <option value="F">Féminin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Temps d'étude (heures/semaine)</label>
+                            <input type="number" name="study_time" required min="0" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label>Absences</label>
+                            <input type="number" name="absences" required min="0" max="100">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="form-group">
+                                <label>Note Précédente</label>
+                                <input type="number" step="0.1" name="prev_grade" required min="0" max="20">
+                            </div>
+                            <div class="form-group">
+                                <label>Note Finale</label>
+                                <input type="number" step="0.1" name="final_grade" required min="0" max="20">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Enregistrer l'Étudiant</button>
+                    </form>
+                </div>
+
+                <!-- Summary Stats Card -->
+                <div class="card" id="summary-card">
+                    <h2>Résumé de l'Analyse</h2>
+                    <div id="analysis-summary" style="margin-top: 1rem;">
+                        <p style="color: var(--text-muted);">Lancez l'analyse pour voir les résultats.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Row 1 -->
+            <div class="charts-row">
+                <div class="card">
+                    <h2>Régression : Temps d'étude vs Note</h2>
+                    <canvas id="regressionChart"></canvas>
+                </div>
+                <div class="card">
+                    <h2>Clustering : Profils Étudiants</h2>
+                    <canvas id="clusterChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Visualization Row 2 -->
+            <div class="charts-row">
+                <div class="card">
+                    <h2>PCA : Réduction de Dimension (2D)</h2>
+                    <canvas id="pcaChart"></canvas>
+                </div>
+                <div class="card">
+                    <h2>Coefficients de Régression</h2>
+                    <canvas id="coeffChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="card" style="margin-top: 2rem;">
+                <h2>Registres des Étudiants</h2>
+                <div class="table-container">
+                    <table id="student-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Âge</th>
+                                <th>Genre</th>
+                                <th>Étude</th>
+                                <th>Absences</th>
+                                <th>Note Préc.</th>
+                                <th>Note Finale</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
