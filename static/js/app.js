@@ -3,12 +3,102 @@ let analysisResults = null;
 let charts = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetchStudents();
+    if (localStorage.getItem('token')) {
+        showDashboard();
+        fetchStudents();
+    } else {
+        showAuth();
+    }
 });
+
+function getAuthHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+        'Authorization': `Bearer ${token}`
+    };
+}
+
+function showAuth() {
+    document.getElementById('auth-actions').style.display = 'block';
+    document.getElementById('dashboard-actions').style.display = 'none';
+    document.getElementById('auth-container').style.display = 'grid';
+    document.getElementById('dashboard-container').style.display = 'none';
+}
+
+function showDashboard() {
+    document.getElementById('auth-actions').style.display = 'none';
+    document.getElementById('dashboard-actions').style.display = 'block';
+    document.getElementById('auth-container').style.display = 'none';
+    document.getElementById('dashboard-container').style.display = 'block';
+}
+
+function showLogin() {
+    document.getElementById('login-card').style.display = 'block';
+    document.getElementById('register-card').style.display = 'none';
+}
+
+function showRegister() {
+    document.getElementById('login-card').style.display = 'none';
+    document.getElementById('register-card').style.display = 'block';
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    showAuth();
+    students = [];
+    renderTable();
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+        const response = await fetch('/api/token', {
+            method: 'POST',
+            body: formData // OAuth2PasswordRequestForm expects form data
+        });
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('token', data.access_token);
+            showDashboard();
+            fetchStudents();
+        } else {
+            alert('Identifiants incorrects');
+        }
+    } catch (e) {
+        alert('Erreur réseau');
+    }
+}
+
+async function handleRegister(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (response.ok) {
+            alert('Compte créé avec succès. Veuillez vous connecter.');
+            showLogin();
+        } else {
+            const err = await response.json();
+            alert(err.detail);
+        }
+    } catch (e) {
+        alert('Erreur réseau');
+    }
+}
+
 
 async function fetchStudents() {
     try {
-        const response = await fetch('/api/students');
+        const response = await fetch('/api/students', {
+            headers: getAuthHeaders()
+        });
+        if (response.status === 401) { logout(); return; }
         students = await response.json();
         renderTable();
     } catch (error) {
@@ -47,15 +137,19 @@ async function handleFormSubmit(event) {
     try {
         const response = await fetch('/api/students', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
             body: JSON.stringify(data)
         });
         
         if (response.ok) {
             event.target.reset();
             fetchStudents();
-        }
+        } else if (response.status === 401) { logout(); return; }
     } catch (error) {
+        console.error('Erreur détaillée lors de l\'enregistrement des données:', error);
         alert('Erreur lors de l\'enregistrement des données');
     }
 }
@@ -63,9 +157,14 @@ async function handleFormSubmit(event) {
 async function deleteStudent(id) {
     if (!confirm('Êtes-vous sûr ?')) return;
     try {
-        await fetch(`/api/students/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/students/${id}`, { 
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (response.status === 401) { logout(); return; }
         fetchStudents();
     } catch (error) {
+        console.error('Erreur détaillée lors de la suppression:', error);
         alert('Erreur lors de la suppression');
     }
 }
@@ -80,28 +179,39 @@ async function handleCsvUpload(event) {
     try {
         const response = await fetch('/api/upload-csv', {
             method: 'POST',
+            headers: getAuthHeaders(),
             body: formData
         });
+        if (response.status === 401) { logout(); return; }
         const result = await response.json();
         alert(result.message);
         fetchStudents();
     } catch (error) {
+        console.error('Erreur détaillée lors de l\'importation du CSV:', error);
         alert('Erreur lors de l\'importation du CSV');
     }
 }
 
 async function triggerAnalysis() {
     try {
-        const response = await fetch('/api/analysis');
+        const response = await fetch('/api/analysis', {
+            headers: getAuthHeaders()
+        });
+        if (response.status === 401) { logout(); return; }
         if (!response.ok) {
             const err = await response.json();
             alert(err.detail);
             return;
         }
         analysisResults = await response.json();
+        if (analysisResults.error) {
+            alert(analysisResults.error);
+            return;
+        }
         renderAnalysisSummary();
         renderCharts();
     } catch (error) {
+        console.error('Erreur détaillée lors de l\'analyse:', error);
         alert('Erreur lors de l\'analyse');
     }
 }

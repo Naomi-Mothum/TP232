@@ -5,3 +5,6 @@ pandas
 scikit-learn
 python-multipart
 numpy
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
